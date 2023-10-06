@@ -21,14 +21,13 @@ app.use(session({
 }));
 app.use(flash());
 
-// Configuration de la base de données SQLite3
 const db = new sqlite3.Database('mydb.db');
 
 db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS utilisateurs (id INTEGER PRIMARY KEY AUTOINCREMENT, nom_utilisateur TEXT, mot_de_passe TEXT)');
 });
 
-// EJS comme moteur de modèle pour les vues
+
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
@@ -44,7 +43,7 @@ app.get('/inscription', (req, res) => {
 app.post('/inscription', (req, res) => {
     const { nom_utilisateur, mot_de_passe } = req.body;
 
-    // Hacher le mot de passe
+
     const saltRounds = 10;
     bcrypt.hash(mot_de_passe, saltRounds, (err, hash) => {
         if (err) {
@@ -53,7 +52,7 @@ app.post('/inscription', (req, res) => {
             return;
         }
 
-        // Insérer l'utilisateur dans la base de données
+      
         db.run('INSERT INTO utilisateurs (nom_utilisateur, mot_de_passe) VALUES (?, ?)', [nom_utilisateur, hash], (err) => {
             if (err) {
                 req.flash('message', 'L\'inscription a échoué. Veuillez réessayer.');
@@ -70,7 +69,6 @@ app.post('/inscription', (req, res) => {
 app.post('/connexion', (req, res) => {
     const { nom_utilisateur, mot_de_passe } = req.body;
 
-    // Vérifier si l'utilisateur existe dans la base de données
     db.get('SELECT id, mot_de_passe FROM utilisateurs WHERE nom_utilisateur = ?', [nom_utilisateur], (err, row) => {
         if (err) {
             res.redirect('/');
@@ -83,7 +81,6 @@ app.post('/connexion', (req, res) => {
             return;
         }
 
-        // Comparer le mot de passe fourni avec le mot de passe haché de la base de données
         bcrypt.compare(mot_de_passe, row.mot_de_passe, (err, result) => {
             if (err || !result) {
                 req.flash('message', 'Mot de passe incorrect.');
@@ -91,7 +88,7 @@ app.post('/connexion', (req, res) => {
                 return;
             }
 
-            // Stocker la session utilisateur
+          
             req.session.userId = row.id;
             res.redirect('/profil');
         });
@@ -99,14 +96,14 @@ app.post('/connexion', (req, res) => {
 });
 
 app.get('/profil', (req, res) => {
-    // Vérifier si l'utilisateur est authentifié
+  
     if (!req.session.userId) {
         req.flash('message', 'Vous devez être connecté pour accéder au profil.');
         res.redirect('/');
         return;
     }
 
-    // Récupérer les données du profil de l'utilisateur depuis la base de données
+  
     db.get('SELECT id, nom_utilisateur FROM utilisateurs WHERE id = ?', [req.session.userId], (err, row) => {
         if (err) {
             res.redirect('/');
